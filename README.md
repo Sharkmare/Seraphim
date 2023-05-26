@@ -12,10 +12,16 @@ A Basice voice recognition system to send data over a websocket, originally made
 - speech_recognition
 - simpleaudio
 - gtts
+- numpy
 
+```
+pip install SpeechRecognition
+pip install simpleaudio
+pip install gtts
+pip install numpy
+```
 ## Internal Requirements
 - logging
 - asyncio
-- numpy
 - os
 - subprocess
