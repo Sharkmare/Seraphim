@@ -25,8 +25,6 @@ async def recognize_voice():
     formatted_microphone_list = "\n".join(microphone_list)
     logging.info(f"Available Microphones:\n{formatted_microphone_list}")
 
-    activation_phrase = "overwatch"
-
     async def play_tone_sequence(sequence):
         for tone in sequence:
             frequency, duration, volume = tone
@@ -68,16 +66,15 @@ async def recognize_voice():
                 text = recognizer.recognize_google(audio_data).lower()
                 logging.info(f"Recognized voice input: {text}")
 
-                if activation_phrase in text or True:
-                    message = text.replace(activation_phrase, "").strip()
-                    with open('flag.info', 'w') as file:
-                        file.write(message)
-                    # Convert the phrase into speech
-                    tts = gTTS(message)
-                    # Save the speech as an audio file in the script's 
-                    tts.save(temp_filename)
-                    # Play the audio file using Windows Media Player
-                    subprocess.Popen(["C:\\Program Files (x86)\\Windows Media Player\\wmplayer.exe", temp_filename])
+                message = text.strip()
+                with open('flag.info', 'w') as file:
+                    file.write(message)
+                # Convert the phrase "Understood" into speech
+                tts = gTTS(message)
+                # Save the speech as an audio file in the script's 
+                tts.save(temp_filename)
+                # Play the audio file using Windows Media Player
+                subprocess.Popen(["C:\\Program Files (x86)\\Windows Media Player\\wmplayer.exe", temp_filename])
 
             except sr.WaitTimeoutError:
                 # Handle timeout event and continue the loop to relaunch the listen process
