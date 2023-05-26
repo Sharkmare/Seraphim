@@ -3,9 +3,10 @@ import logging
 import asyncio
 import numpy as np
 import simpleaudio as sa
-from gtts import gTTS
 import os
 import subprocess
+import requests
+from gtts import gTTS
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -13,7 +14,10 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 # Define a timeout value for the listen() method
 LISTEN_TIMEOUT = 60  # Adjust this value based on your requirements
 
-async def recognize_voice():
+# TTS URL
+TTS_URL = "http://tts.cyzon.us/tts?text="
+
+async def recognize_voice(use_gtts=True):
     logging.info("recognize_voice running.")
     recognizer = sr.Recognizer()
     microphone = sr.Microphone()
@@ -24,6 +28,8 @@ async def recognize_voice():
     # Format the microphone list with one microphone per line
     formatted_microphone_list = "\n".join(microphone_list)
     logging.info(f"Available Microphones:\n{formatted_microphone_list}")
+
+    activation_phrase = "overwatch"
 
     async def play_tone_sequence(sequence):
         for tone in sequence:
@@ -66,15 +72,24 @@ async def recognize_voice():
                 text = recognizer.recognize_google(audio_data).lower()
                 logging.info(f"Recognized voice input: {text}")
 
-                message = text.strip()
-                with open('flag.info', 'w') as file:
-                    file.write(message)
-                # Convert the phrase "Understood" into speech
-                tts = gTTS(message)
-                # Save the speech as an audio file in the script's 
-                tts.save(temp_filename)
-                # Play the audio file using Windows Media Player
-                subprocess.Popen(["C:\\Program Files (x86)\\Windows Media Player\\wmplayer.exe", temp_filename])
+                if activation_phrase in text or True:
+                    message = text.replace(activation_phrase, "").strip()
+                    with open('flag.info', 'w') as file:
+                        file.write(message)
+
+                    if use_gtts:
+                        # Convert the message into speech using GTTS
+                        tts = gTTS(message)
+                        tts.save(temp_filename)
+                    else:
+                        # Convert the message into speech using the TTS URL
+                        url = TTS_URL + message
+                        response = requests.get(url)
+                        with open(temp_filename, 'wb') as file:
+                            file.write(response.content)
+
+                    # Play the audio file using Windows Media Player
+                    subprocess.Popen(["C:\\Program Files (x86)\\Windows Media Player\\wmplayer.exe", temp_filename])
 
             except sr.WaitTimeoutError:
                 # Handle timeout event and continue the loop to relaunch the listen process
@@ -93,7 +108,7 @@ async def recognize_voice():
             await asyncio.sleep(0.1)  # Add a small delay to allow other tasks to run
 
 async def main():
-    await recognize_voice()
+    await recognize_voice(use_gtts=False)  # Use TTS URL instead of GTTS
 
 if __name__ == "__main__":
     asyncio.run(main())
