@@ -3,6 +3,9 @@ import logging
 import asyncio
 import numpy as np
 import simpleaudio as sa
+from gtts import gTTS
+import os
+import subprocess
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -48,6 +51,10 @@ async def recognize_voice():
     with microphone as source:
         while True:
             try:
+                temp_filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp.mp3")
+                # Remove existing temporary audio file if it exists
+                if os.path.exists(temp_filename):
+                    os.remove(temp_filename)
                 # Play the tone sequence for the start sound
                 sequence = [(440, 0.2, 0.2), (660, 0.2, 0.3), (880, 0.2, 0.2)]  # Adjust tones, durations, and volumes as desired
                 asyncio.create_task(play_tone_sequence(sequence))
@@ -65,10 +72,12 @@ async def recognize_voice():
                     message = text.replace(activation_phrase, "").strip()
                     with open('flag.info', 'w') as file:
                         file.write(message)
-
-                    # Play the notification sound
-                    sequence = [(880, 0.2, 0.4), (660, 0.2, 0.3), (440, 0.2, 0.4)]  # Adjust tones, durations, and volumes as desired
-                    asyncio.create_task(play_tone_sequence(sequence))
+                    # Convert the phrase into speech
+                    tts = gTTS(message)
+                    # Save the speech as an audio file in the script's 
+                    tts.save(temp_filename)
+                    # Play the audio file using Windows Media Player
+                    subprocess.Popen(["C:\\Program Files (x86)\\Windows Media Player\\wmplayer.exe", temp_filename])
 
             except sr.WaitTimeoutError:
                 # Handle timeout event and continue the loop to relaunch the listen process
@@ -85,20 +94,6 @@ async def recognize_voice():
                     file.write(message)
 
             await asyncio.sleep(0.1)  # Add a small delay to allow other tasks to run
-
-async def main():
-    await recognize_voice()
-
-if __name__ == "__main__":
-    asyncio.run(main())
-
-                with open('flag.info', 'w') as file:
-                    file.write(message)
-            except sr.RequestError:
-                # Handle errors from the speech recognition service
-                message = "Speech recognition service error"
-                with open('flag.info', 'w') as file:
-                    file.write(message)
 
 async def main():
     await recognize_voice()
