@@ -67,8 +67,17 @@ async def server_handler(websocket, path):
         pass  # Connection was closed by the client
 
 async def start_server():
-    server = await websockets.serve(server_handler, 'localhost', 8765)
-    await server.wait_closed()
+    port = 8765
+    while True:
+        try:
+            server = await websockets.serve(server_handler, 'localhost', port)
+            logging.info(f"Server started on port {port}")
+            await server.wait_closed()
+            break  # Exit the loop if the server is closed successfully
+        except OSError:
+            logging.warning(f"Port {port} is not available. Trying the next port.")
+            port += 1
+
 
 async def main():
     await start_server()
