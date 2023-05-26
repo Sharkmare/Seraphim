@@ -1,5 +1,5 @@
 # Seraphim
-A Basice voice recognition system to send data over a webhook, originally made for use in VR applications.
+A Basice voice recognition system to send data over a websocket, originally made for use in VR applications.
 
 ## How it works
 - Run the Websocket script
