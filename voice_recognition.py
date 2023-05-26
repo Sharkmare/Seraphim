@@ -1,7 +1,8 @@
 import speech_recognition as sr
 import logging
 import asyncio
-import winsound
+import numpy as np
+import simpleaudio as sa
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -22,12 +23,35 @@ async def recognize_voice():
     logging.info(f"Available Microphones:\n{formatted_microphone_list}")
 
     activation_phrase = "overwatch"
-    
+
+    async def play_tone_sequence(sequence):
+        for tone in sequence:
+            frequency, duration, volume = tone
+            await play_tone(frequency, duration, volume)
+
+    async def play_tone(frequency, duration, volume):
+        # Generate samples for the specified frequency and duration
+        sample_rate = 44100  # Standard audio sample rate (can be adjusted if needed)
+        t = np.linspace(0, duration, int(sample_rate * duration), False)
+        audio = np.sin(frequency * 2 * np.pi * t)
+
+        # Adjust the volume of the audio
+        audio *= volume
+
+        # Convert the samples to the appropriate data type
+        audio = (audio * 32767).astype(np.int16)
+
+        # Play the audio
+        play_obj = sa.play_buffer(audio, 1, 2, sample_rate)
+        play_obj.wait_done()
+
     with microphone as source:
         while True:
             try:
-                # Listen to the microphone for voice input with a timeout
-                winsound.PlaySound("SystemAsterisk", winsound.SND_ALIAS)
+                # Play the tone sequence for the start sound
+                sequence = [(440, 0.2, 0.2), (660, 0.2, 0.3), (880, 0.2, 0.2)]  # Adjust tones, durations, and volumes as desired
+                asyncio.create_task(play_tone_sequence(sequence))
+
                 logging.debug("Listening to microphone...")
                 audio_data = recognizer.listen(source, timeout=LISTEN_TIMEOUT)
                 logging.debug("Audio data captured.")
@@ -42,8 +66,9 @@ async def recognize_voice():
                     with open('flag.info', 'w') as file:
                         file.write(message)
 
-                    # Play the default Windows notification sound
-                    winsound.PlaySound("SystemNotification", winsound.SND_ALIAS)
+                    # Play the notification sound
+                    sequence = [(880, 0.2, 0.4), (660, 0.2, 0.3), (440, 0.2, 0.4)]  # Adjust tones, durations, and volumes as desired
+                    asyncio.create_task(play_tone_sequence(sequence))
 
             except sr.WaitTimeoutError:
                 # Handle timeout event and continue the loop to relaunch the listen process
@@ -51,6 +76,22 @@ async def recognize_voice():
             except sr.UnknownValueError:
                 # Handle cases where the speech recognition couldn't understand the voice input
                 message = "Could not understand the voice input"
+                with open('flag.info', 'w') as file:
+                    file.write(message)
+            except sr.RequestError:
+                # Handle errors from the speech recognition service
+                message = "Speech recognition service error"
+                with open('flag.info', 'w') as file:
+                    file.write(message)
+
+            await asyncio.sleep(0.1)  # Add a small delay to allow other tasks to run
+
+async def main():
+    await recognize_voice()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
                 with open('flag.info', 'w') as file:
                     file.write(message)
             except sr.RequestError:
