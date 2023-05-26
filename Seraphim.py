@@ -2,25 +2,24 @@ import asyncio
 import websockets
 import speech_recognition as sr
 import logging
+import threading
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Define a timeout value for the listen() method
-LISTEN_TIMEOUT = 5  # Adjust this value based on your requirements
+LISTEN_TIMEOUT = 60  # Adjust this value based on your requirements
 
 async def handle_command(command):
     # Implement your command handling logic here based on the input command
     if "trigger event" in command:
-        response = "Triggering event"
+        return "Triggering event"
     elif "do something" in command:
-        response = "Doing something"
+        return "Doing something"
     else:
-        response = "Unknown command"
+        return command
 
-    return response
-
-async def recognize_voice(websocket, path):
+def recognize_voice(websocket):
     logging.info("recognize_voice running.")
     recognizer = sr.Recognizer()
     microphone = sr.Microphone()
@@ -47,10 +46,52 @@ async def recognize_voice(websocket, path):
                 logging.debug("Recognizing voice input...")
                 text = recognizer.recognize_google(audio_data).lower()
                 logging.info(f"Recognized voice input: {text}")
-    
+
                 if not is_activated:
                     if activation_phrase == text:
                         is_activated = True
+                        logging.info("Activation phrase recognized. System activated.")
+                        response = "Activated. Waiting for command..."
+                    else:
+                        response = "Not activated. Listening for activation phrase..."
+                else:
+                    response = asyncio.run(handle_command(text))
+                    is_activated = False  # Deactivate after analyzing the command
+                    logging.info("Command processed. System deactivated. Listening for activation phrase...")
+
+                asyncio.run(websocket.send(response))
+
+            except sr.WaitTimeoutError:
+                # Handle timeout event and continue the loop to relaunch the listen process
+                #logging.debug("Timeout occurred while waiting for speech")
+                continue
+            except sr.UnknownValueError:
+                # Handle cases where the speech recognition couldn't understand the voice input
+                #response = "Could not understand the voice input"
+                asyncio.run(websocket.send(response))
+            except sr.RequestError:
+                # Handle errors from the speech recognition service
+                #response = "Speech recognition service error"
+                asyncio.run(websocket.send(response))
+
+async def server_handler(websocket, path):
+    # Start a new thread for the speech recognition part of the program
+    threading.Thread(target=recognize_voice, args=(websocket,)).start()
+
+    # Keep the connection open by waiting for messages from the client
+    try:
+        while True:
+            message = await websocket.recv()
+            # Do something with the message (optional)
+    except websockets.exceptions.ConnectionClosed:
+        pass  # Connection was closed by the client
+
+async def start_server():
+    server = await websockets.serve(server_handler, 'localhost', 8765)
+    await server.wait_closed()
+
+asyncio.run(start_server())
+
                         logging.info("Activation phrase recognized. System activated.")
                         response = "Activated. Waiting for command..."
                     else:
