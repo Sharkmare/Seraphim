@@ -22,11 +22,3 @@ pip install gtts
 pip install numpy
 pip install python-tk
 ```
-## Internal Requirements
-- logging
-- asyncio
-- os
-- subprocess
-- colorama
-- traceback
-- websockets
