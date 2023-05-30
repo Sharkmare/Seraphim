@@ -9,7 +9,7 @@ import requests
 from gtts import gTTS
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Define a timeout value for the listen() method
 LISTEN_TIMEOUT = 60  # Adjust this value based on your requirements
@@ -23,11 +23,11 @@ async def recognize_voice(use_gtts=True):
     microphone = sr.Microphone()
 
     # Find the microphone by name containing the word "index"
-    microphone_list = sr.Microphone.list_microphone_names()
+    #microphone_list = sr.Microphone.list_microphone_names()
 
     # Format the microphone list with one microphone per line
-    formatted_microphone_list = "\n".join(microphone_list)
-    logging.info(f"Available Microphones:\n{formatted_microphone_list}")
+    #formatted_microphone_list = "\n".join(microphone_list)
+    #logging.info(f"Available Microphones:\n{formatted_microphone_list}")
 
     activation_phrase = "overwatch"
 
